@@ -6,7 +6,6 @@ import {
   IconButton,
   Box,
   Typography,
-  Grid,
   Paper,
   CircularProgress,
   Alert,
@@ -34,7 +33,6 @@ const ModalCalendario = ({ open, onClose }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [user, setUser] = useState(null);
 
-  // Cargar usuario desde localStorage
   useEffect(() => {
     const stored = localStorage.getItem('user_crm');
     try {
@@ -49,7 +47,6 @@ const ModalCalendario = ({ open, onClose }) => {
     }
   }, []);
 
-  // Obtener eventos cuando se abre el modal
   useEffect(() => {
     if (open && user) {
       fetchEventos();
@@ -58,10 +55,8 @@ const ModalCalendario = ({ open, onClose }) => {
 
   const fetchEventos = async () => {
     if (!user) return;
-    
     setLoading(true);
     setError(null);
-    
     try {
       const { data } = await axios.get(
         'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/eventos',
@@ -72,7 +67,6 @@ const ModalCalendario = ({ open, onClose }) => {
           },
         }
       );
-
       setEventos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('❌ Error al obtener eventos:', error);
@@ -83,7 +77,6 @@ const ModalCalendario = ({ open, onClose }) => {
     }
   };
 
-  // Obtener eventos para una fecha específica
   const getEventosForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
     return eventos.filter(evento => {
@@ -92,24 +85,19 @@ const ModalCalendario = ({ open, onClose }) => {
     });
   };
 
-  // Generar días del mes
   const generateCalendarDays = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
-    
     const days = [];
     const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 41); // 6 semanas
-    
+    endDate.setDate(endDate.getDate() + 41);
     for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
       days.push(new Date(date));
     }
-    
     return days;
   };
 
@@ -124,16 +112,16 @@ const ModalCalendario = ({ open, onClose }) => {
   const formatTime = (timeString) => {
     if (!timeString) return '';
     const date = new Date(timeString);
-    return date.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: false 
+      hour12: false
     });
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
+    return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -143,7 +131,6 @@ const ModalCalendario = ({ open, onClose }) => {
 
   const renderEventDetail = () => {
     if (!selectedEvent) return null;
-
     return (
       <Card sx={{ mt: 2, backgroundColor: '#f8f9fa' }}>
         <CardContent>
@@ -155,15 +142,15 @@ const ModalCalendario = ({ open, onClose }) => {
           </Box>
 
           <Typography variant="body1" sx={{ mb: 2 }}>
-            <strong>Fecha:</strong> {formatDate(selectedEvent.fecha_evento)}
+            <strong>Date:</strong> {formatDate(selectedEvent.fecha_evento)}
           </Typography>
 
           <Typography variant="body1" sx={{ mb: 2 }}>
-            <strong>Hora:</strong> {formatTime(selectedEvent.hora_evento)}
+            <strong>Hour:</strong> {formatTime(selectedEvent.hora_evento)}
           </Typography>
 
           <Typography variant="body1" sx={{ mb: 2 }}>
-            <strong>Descripción:</strong> {selectedEvent.descripcion_corta}
+            <strong>Description:</strong> {selectedEvent.descripcion_corta}
           </Typography>
 
           <Divider sx={{ my: 2 }} />
@@ -171,14 +158,14 @@ const ModalCalendario = ({ open, onClose }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <BusinessIcon color="primary" sx={{ mr: 1 }} />
             <Typography variant="subtitle1">
-              <strong>Empresa:</strong> {selectedEvent.empresa_nombre}
+              <strong>Company:</strong> {selectedEvent.empresa_nombre}
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <PersonIcon color="primary" sx={{ mr: 1 }} />
             <Typography variant="body1">
-              <strong>Contacto:</strong> {selectedEvent.contacto_nombre}
+              <strong>Contact:</strong> {selectedEvent.contacto_nombre}
               {selectedEvent.cargo && ` - ${selectedEvent.cargo}`}
             </Typography>
           </Box>
@@ -210,34 +197,26 @@ const ModalCalendario = ({ open, onClose }) => {
 
   const renderCalendar = () => {
     const days = generateCalendarDays();
-    const monthNames = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const monthHeader = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate);
+    const dayNames = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(1970, 0, 4 + i); // Sunday start
+      dayNames.push(new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(d));
+    }
 
     return (
       <Box sx={{ width: '100%' }}>
-        {/* Header del calendario */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <IconButton onClick={() => changeMonth(-1)}>
             <ChevronLeftIcon />
           </IconButton>
-          <Typography variant="h6">
-            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-          </Typography>
+          <Typography variant="h6">{monthHeader}</Typography>
           <IconButton onClick={() => changeMonth(1)}>
             <ChevronRightIcon />
           </IconButton>
         </Box>
 
-        {/* Días de la semana */}
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: 1, 
-          mb: 1 
-        }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, mb: 1 }}>
           {dayNames.map(day => (
             <Box key={day} sx={{ textAlign: 'center', p: 1 }}>
               <Typography variant="caption" fontWeight="bold" color="text.secondary">
@@ -247,21 +226,14 @@ const ModalCalendario = ({ open, onClose }) => {
           ))}
         </Box>
 
-        {/* Días del mes */}
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: 1,
-          minHeight: '300px' 
-        }}>
-          {days.map((day, index) => {
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, minHeight: '300px' }}>
+          {days.map((day, idx) => {
             const eventosDelDia = getEventosForDate(day);
             const isCurrentMonth = day.getMonth() === currentDate.getMonth();
             const isToday = day.toDateString() === new Date().toDateString();
-
             return (
               <Paper
-                key={index}
+                key={idx}
                 elevation={eventosDelDia.length > 0 ? 2 : 0}
                 sx={{
                   minHeight: 50,
@@ -270,45 +242,34 @@ const ModalCalendario = ({ open, onClose }) => {
                   justifyContent: 'center',
                   alignItems: 'center',
                   cursor: eventosDelDia.length > 0 ? 'pointer' : 'default',
-                  backgroundColor: eventosDelDia.length > 0 
-                    ? '#4caf50' 
-                    : isToday 
-                      ? '#e3f2fd' 
+                  backgroundColor: eventosDelDia.length > 0
+                    ? '#4caf50'
+                    : isToday
+                      ? '#e3f2fd'
                       : 'transparent',
-                  color: eventosDelDia.length > 0 
-                    ? 'white' 
-                    : isCurrentMonth 
-                      ? 'text.primary' 
+                  color: eventosDelDia.length > 0
+                    ? 'white'
+                    : isCurrentMonth
+                      ? 'text.primary'
                       : 'text.disabled',
                   opacity: isCurrentMonth ? 1 : 0.5,
                   transition: 'all 0.2s ease',
-                  '&:hover': eventosDelDia.length > 0 ? {
-                    backgroundColor: '#388e3c',
-                    transform: 'scale(1.05)',
-                  } : {},
+                  '&:hover': eventosDelDia.length > 0
+                    ? { backgroundColor: '#388e3c', transform: 'scale(1.05)' }
+                    : {},
                   border: isToday ? '2px solid #2196f3' : 'none'
                 }}
-                onClick={() => {
-                  if (eventosDelDia.length > 0) {
-                    setSelectedEvent(eventosDelDia[0]); // Mostrar el primer evento del día
-                  }
-                }}
+                onClick={() => eventosDelDia.length > 0 && setSelectedEvent(eventosDelDia[0])}
               >
                 <Typography variant="body2" fontWeight={isToday ? 'bold' : 'normal'}>
                   {day.getDate()}
                 </Typography>
                 {eventosDelDia.length > 0 && (
-                  <Tooltip title={`${eventosDelDia.length} evento(s)`}>
+                  <Tooltip title={`${eventosDelDia.length} event(s)`}>
                     <Chip
                       size="small"
                       label={eventosDelDia.length}
-                      sx={{
-                        height: 16,
-                        fontSize: '0.6rem',
-                        backgroundColor: 'rgba(255,255,255,0.3)',
-                        color: 'white',
-                        mt: 0.5
-                      }}
+                      sx={{ height: 16, fontSize: '0.6rem', backgroundColor: 'rgba(255,255,255,0.3)', color: 'white', mt: 0.5 }}
                     />
                   </Tooltip>
                 )}
@@ -323,7 +284,7 @@ const ModalCalendario = ({ open, onClose }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        Calendario de Eventos
+        Calendar of Events
         <IconButton onClick={onClose}>
           <CloseIcon />
         </IconButton>
@@ -342,10 +303,10 @@ const ModalCalendario = ({ open, onClose }) => {
             {eventos.length === 0 ? (
               <Box textAlign="center" py={4}>
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No hay eventos registrados
+                  No events registered
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Los eventos aparecerán aquí una vez que los crees
+                  Events will appear here once created
                 </Typography>
               </Box>
             ) : (

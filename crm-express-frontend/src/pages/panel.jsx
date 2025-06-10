@@ -4,7 +4,7 @@ import {
   AppBar, Toolbar, IconButton, Typography, Drawer, List, ListItem, ListItemButton,
   ListItemIcon, ListItemText, Box, Button, useTheme, useMediaQuery, Stack,
   Accordion, AccordionSummary, AccordionDetails, CircularProgress,
-  Container, Alert, Tooltip
+  Container, Alert, Tooltip, Chip
 } from '@mui/material';
 import EventIcon from '@mui/icons-material/Event';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -14,13 +14,13 @@ import BusinessIcon from '@mui/icons-material/Business';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 import CrearEmpresaModal from '../components/crearEmpresaModal';
 import CrearContactoModal from '../components/CrearContactoModal';
 import CrearEventoModal from '../components/CrearEventoModal';
 import ModalCalendario from '../components/ModalCalendario';
 import CrearOportunidadModal from '../components/CrearOportunidadModal';
-
 
 const Panel = () => {
   const theme = useTheme();
@@ -30,8 +30,10 @@ const Panel = () => {
   const [user, setUser] = useState(null);
   const [empresas, setEmpresas] = useState([]);
   const [contactos, setContactos] = useState([]);
+  const [oportunidades, setOportunidades] = useState([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(true);
   const [loadingContactos, setLoadingContactos] = useState(true);
+  const [loadingOportunidades, setLoadingOportunidades] = useState(true);
   const [error, setError] = useState(null);
 
   const [openCrearContacto, setOpenCrearContacto] = useState(false);
@@ -42,7 +44,6 @@ const Panel = () => {
   const [contactoEventoSeleccionado, setContactoEventoSeleccionado] = useState(null);
   const [openCalendario, setOpenCalendario] = useState(false);
   const [openCrearOportunidad, setOpenCrearOportunidad] = useState(false);
-
 
   // Cargar usuario desde localStorage
   useEffect(() => {
@@ -123,6 +124,36 @@ const Panel = () => {
     fetchContactos();
   }, [user]);
 
+  // Obtener oportunidades
+  useEffect(() => {
+    const fetchOportunidades = async () => {
+      if (!user) return;
+      
+      setLoadingOportunidades(true);
+      
+      try {
+        const { data } = await axios.get(
+          'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/oportunidades',
+          {
+            headers: {
+              'x-id-usuario-crm': user.id_usuario_crm,
+              'x-created-by': user.created_by,
+            },
+          }
+        );
+
+        setOportunidades(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('❌ Error al obtener oportunidades:', error);
+        setOportunidades([]);
+      } finally {
+        setLoadingOportunidades(false);
+      }
+    };
+
+    fetchOportunidades();
+  }, [user]);
+
   const handleLogout = () => {
     localStorage.removeItem('user_crm');
     window.location.href = '/';
@@ -185,9 +216,49 @@ const Panel = () => {
     fetchContactos();
   };
 
+  const handleOportunidadCreated = () => {
+    setOpenCrearOportunidad(false);
+    // Recargar oportunidades
+    const fetchOportunidades = async () => {
+      if (!user) return;
+      
+      setLoadingOportunidades(true);
+      try {
+        const { data } = await axios.get(
+          'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/oportunidades',
+          {
+            headers: {
+              'x-id-usuario-crm': user.id_usuario_crm,
+              'x-created-by': user.created_by,
+            },
+          }
+        );
+        setOportunidades(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('❌ Error al recargar oportunidades:', error);
+      } finally {
+        setLoadingOportunidades(false);
+      }
+    };
+    fetchOportunidades();
+  };
+
   // Función para obtener los contactos de una empresa específica
   const getContactosPorEmpresa = (empresaId) => {
     return contactos.filter(contacto => contacto.id_empresa_crm === empresaId);
+  };
+
+  // Función para obtener las oportunidades de una empresa específica
+  const getOportunidadesPorEmpresa = (empresaId) => {
+    return oportunidades.filter(oportunidad => oportunidad.id_empresa_crm === empresaId);
+  };
+
+  // Función para formatear valor monetario
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(value);
   };
 
   const drawerContent = (
@@ -220,12 +291,19 @@ const Panel = () => {
             <ListItemText primary="Total companies" secondary={empresas.length} />
           </ListItemButton>
         </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton>
+            <ListItemIcon><TrendingUpIcon /></ListItemIcon>
+            <ListItemText primary="Total opportunities" secondary={oportunidades.length} />
+          </ListItemButton>
+        </ListItem>
       </List>
     </Box>
   );
 
   const renderEmpresas = () => {
-    if (loadingEmpresas || loadingContactos) {
+    if (loadingEmpresas || loadingContactos || loadingOportunidades) {
       return (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
           <CircularProgress />
@@ -267,6 +345,7 @@ const Panel = () => {
       <Stack spacing={2}>
         {empresas.map((empresa) => {
           const contactosEmpresa = getContactosPorEmpresa(empresa.id);
+          const oportunidadesEmpresa = getOportunidadesPorEmpresa(empresa.id);
           
           return (
             <Accordion
@@ -430,10 +509,96 @@ const Panel = () => {
                       color="text.secondary"
                       sx={{ 
                         fontStyle: 'italic',
-                        fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                        fontSize: { xs: '0.875rem', sm: '0.9rem' },
+                        mb: 2
                       }}
                     >
                       There are no contacts registered for this company
+                    </Typography>
+                  )}
+                </Box>
+
+                {/* Nueva sección de oportunidades */}
+                <Box mt={2}>
+                  <Typography 
+                    variant="subtitle2" 
+                    color="text.secondary" 
+                    sx={{ 
+                      mb: 1,
+                      fontSize: { xs: '0.9rem', sm: '1rem' },
+                      fontWeight: 600 
+                    }}
+                  >
+                    Business Opportunities
+                  </Typography>
+                  
+                  {oportunidadesEmpresa.length > 0 ? (
+                    <Stack spacing={1.5}>
+                      {oportunidadesEmpresa.map((oportunidad) => (
+                        <Box
+                          key={oportunidad.id_oportunidad}
+                          sx={{
+                            backgroundColor: '#e3f2fd',
+                            borderRadius: 2,
+                            p: 2,
+                            border: '1px solid #bbdefb'
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                            <Typography 
+                              variant="subtitle2" 
+                              sx={{ fontWeight: 'bold', color: '#1976d2' }}
+                            >
+                              🎯 {oportunidad.nombre_oportunidad}
+                            </Typography>
+                            <Chip 
+                              label={formatCurrency(oportunidad.valor_oportunidad)}
+                              color="success"
+                              size="small"
+                              sx={{ fontWeight: 'bold' }}
+                            />
+                          </Box>
+                          
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+                              👤 <strong>Lead:</strong> {oportunidad.lead_empresa}
+                            </Typography>
+                          </Box>
+
+                          {oportunidad.seguimiento && (
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+                                📋 <strong>Follow-up:</strong> {oportunidad.seguimiento}
+                              </Typography>
+                            </Box>
+                          )}
+
+                          {oportunidad.listado && (
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+                                📝 <strong>Catalog:</strong> {oportunidad.listado}
+                              </Typography>
+                            </Box>
+                          )}
+
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              Modified: {new Date(oportunidad.modify_date).toLocaleDateString('es-ES')}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ 
+                        fontStyle: 'italic',
+                        fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                      }}
+                    >
+                      There are no business opportunities registered for this company
                     </Typography>
                   )}
                 </Box>
@@ -473,10 +638,13 @@ const Panel = () => {
               >
                 Add Contact
               </Button>
-              <Button color="inherit" startIcon={<EmojiEventsIcon />} onClick={() => setOpenCrearOportunidad(true)}>
-  Create Opportunity
-</Button>
-
+              <Button 
+                color="inherit" 
+                startIcon={<EmojiEventsIcon />} 
+                onClick={() => setOpenCrearOportunidad(true)}
+              >
+                Create Opportunity
+              </Button>
               <Button color="inherit" startIcon={<LogoutIcon />} onClick={handleLogout}>
                 Logout
               </Button>
@@ -530,15 +698,6 @@ const Panel = () => {
         </Container>
       </Box>
 
-      <CrearOportunidadModal
-  open={openCrearOportunidad}
-  onClose={() => setOpenCrearOportunidad(false)}
-  empresas={empresas}
-  contactos={contactos}
-  onCreated={() => {/* si quieres refrescar datos o mostrar mensaje */}}
-/>
-
-
       <ModalCalendario
         open={openCalendario}
         onClose={() => setOpenCalendario(false)}
@@ -561,6 +720,13 @@ const Panel = () => {
         onClose={() => setOpenCrearEvento(false)}
         empresa={empresaEventoSeleccionada}
         contacto={contactoEventoSeleccionado}
+      />
+
+      <CrearOportunidadModal
+        open={openCrearOportunidad}
+        onClose={() => setOpenCrearOportunidad(false)}
+        onCreated={handleOportunidadCreated}
+        empresas={empresas}
       />
     </Box>
   );
