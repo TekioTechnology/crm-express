@@ -323,7 +323,7 @@ const Panel = () => {
       return (
         <Box textAlign="center" py={4}>
           <Typography 
-            variant="h6" 
+            variant="h2" 
             color="text.secondary" 
             gutterBottom
             sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
@@ -619,7 +619,7 @@ const Panel = () => {
               <MenuIcon />
             </IconButton>
           )}
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          <Typography variant="h2" sx={{ flexGrow: 1 }}>
             CRM Tekio Europa
           </Typography>
           {!isMobile && (

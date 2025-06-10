@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Button, MenuItem, Box
+  TextField, Button, MenuItem
 } from '@mui/material';
 import axios from 'axios';
 
 const CrearOportunidadModal = ({ open, onClose }) => {
+  const [user, setUser] = useState(null);
   const [empresas, setEmpresas] = useState([]);
   const [selectedEmpresa, setSelectedEmpresa] = useState(null);
   const [nombreOportunidad, setNombreOportunidad] = useState('');
@@ -13,57 +14,74 @@ const CrearOportunidadModal = ({ open, onClose }) => {
   const [seguimiento, setSeguimiento] = useState('');
   const [listado, setListado] = useState('');
   const [valor, setValor] = useState('');
-  const [user, setUser] = useState(null);
 
+  // 1) Cargar usuario
   useEffect(() => {
-    const fetchUser = () => {
-      const stored = localStorage.getItem('user_crm');
-      if (stored) setUser(JSON.parse(stored));
-    };
+    const stored = localStorage.getItem('user_crm');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setUser(parsed);
+    }
+  }, []);
 
+  // 2) Cuando user esté listo, cargar empresas con encabezados
+  useEffect(() => {
+    if (!user) return;
     const fetchEmpresas = async () => {
       try {
         const res = await axios.get(
-          'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/empresas'
+          'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/empresas',
+          {
+            headers: {
+              'x-id-usuario-crm': user.id_usuario_crm,
+              'x-created-by': user.created_by,
+            },
+          }
         );
-        setEmpresas(res.data);
+        setEmpresas(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
         console.error('Error al cargar empresas', error);
       }
     };
-
-    fetchUser();
     fetchEmpresas();
-  }, []);
+  }, [user]);
 
   const handleSubmit = async () => {
-    if (!selectedEmpresa || !user) {
-      console.warn('Faltan datos obligatorios.');
-      return;
-    }
+  if (!selectedEmpresa || !user) {
+    console.warn('Faltan datos obligatorios.');
+    return;
+  }
 
-    const payload = {
-      nombre_empresa: selectedEmpresa.nombre,
-      nombre_oportunidad: nombreOportunidad,
-      lead_empresa: leadEmpresa,
-      id_empresa_crm: selectedEmpresa.id,
-      seguimiento,
-      listado,
-      valor_oportunidad: parseFloat(valor),
-      created_by: user.created_by
-    };
-
-    try {
-      const res = await axios.post(
-        'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/crear-oportunidad',
-        payload
-      );
-      console.log('✅ Oportunidad creada:', res.data);
-      onClose();
-    } catch (err) {
-      console.error('❌ Error al crear oportunidad:', err);
-    }
+  const payload = {
+    id_empresa_crm: selectedEmpresa.id,
+    nombre_empresa: selectedEmpresa.nombre, // ✅ Este campo es necesario
+    nombre_oportunidad: nombreOportunidad,
+    lead_empresa: leadEmpresa,
+    seguimiento,
+    listado,
+    valor_oportunidad: parseFloat(valor),
+    created_by: user.created_by
   };
+
+  console.log('📦 Payload que se enviará:', payload);
+
+  try {
+    await axios.post(
+      'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/crear-oportunidad',
+      payload,
+      {
+        headers: {
+          'x-id-usuario-crm': user.id_usuario_crm,
+          'x-created-by': user.created_by,
+        },
+      }
+    );
+    onClose();
+  } catch (err) {
+    console.error('❌ Error al crear oportunidad:', err);
+  }
+};
+
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -75,53 +93,46 @@ const CrearOportunidadModal = ({ open, onClose }) => {
           fullWidth
           value={selectedEmpresa?.id || ''}
           onChange={e => {
-            const empresa = empresas.find(emp => emp.id === parseInt(e.target.value));
-            setSelectedEmpresa(empresa);
+            const emp = empresas.find(x => x.id === parseInt(e.target.value));
+            setSelectedEmpresa(emp || null);
           }}
           sx={{ mb: 2 }}
         >
           {empresas.map(emp => (
-            <MenuItem key={emp.id} value={emp.id}>{emp.nombre}</MenuItem>
+            <MenuItem key={emp.id} value={emp.id}>
+              {emp.nombre}
+            </MenuItem>
           ))}
         </TextField>
 
+        {/* Resto de campos igual */}
         <TextField
           label="Nombre de la oportunidad"
-          fullWidth
-          value={nombreOportunidad}
+          fullWidth value={nombreOportunidad}
           onChange={e => setNombreOportunidad(e.target.value)}
           sx={{ mb: 2 }}
         />
-
         <TextField
           label="Persona de contacto (lead)"
-          fullWidth
-          value={leadEmpresa}
+          fullWidth value={leadEmpresa}
           onChange={e => setLeadEmpresa(e.target.value)}
           sx={{ mb: 2 }}
         />
-
         <TextField
           label="Seguimiento"
-          fullWidth
-          value={seguimiento}
+          fullWidth value={seguimiento}
           onChange={e => setSeguimiento(e.target.value)}
           sx={{ mb: 2 }}
         />
-
         <TextField
           label="Listado"
-          fullWidth
-          value={listado}
+          fullWidth value={listado}
           onChange={e => setListado(e.target.value)}
           sx={{ mb: 2 }}
         />
-
         <TextField
           label="Valor oportunidad (€)"
-          type="number"
-          fullWidth
-          value={valor}
+          type="number" fullWidth value={valor}
           onChange={e => setValor(e.target.value)}
           sx={{ mb: 2 }}
         />
