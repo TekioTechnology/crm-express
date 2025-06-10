@@ -3,23 +3,23 @@ import axios from 'axios';
 import {
   AppBar, Toolbar, IconButton, Typography, Drawer, List, ListItem, ListItemButton,
   ListItemIcon, ListItemText, Box, Button, useTheme, useMediaQuery, Stack,
-  Accordion, AccordionSummary, AccordionDetails, Grid, CircularProgress,
-  Container, Alert,Tooltip
+  Accordion, AccordionSummary, AccordionDetails, CircularProgress,
+  Container, Alert, Tooltip
 } from '@mui/material';
 import EventIcon from '@mui/icons-material/Event';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PeopleIcon from '@mui/icons-material/People';
-
-
 import MenuIcon from '@mui/icons-material/Menu';
 import BusinessIcon from '@mui/icons-material/Business';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
 import CrearEmpresaModal from '../components/crearEmpresaModal';
 import CrearContactoModal from '../components/CrearContactoModal';
 import CrearEventoModal from '../components/CrearEventoModal';
-import VerEventos from '../components/VerEventos';
+import ModalCalendario from '../components/ModalCalendario';
+import CrearOportunidadModal from '../components/CrearOportunidadModal';
 
 
 const Panel = () => {
@@ -37,9 +37,11 @@ const Panel = () => {
   const [openCrearContacto, setOpenCrearContacto] = useState(false);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState(null);
 
-const [openCrearEvento, setOpenCrearEvento] = useState(false);
-const [empresaEventoSeleccionada, setEmpresaEventoSeleccionada] = useState(null);
-const [contactoEventoSeleccionado, setContactoEventoSeleccionado] = useState(null);
+  const [openCrearEvento, setOpenCrearEvento] = useState(false);
+  const [empresaEventoSeleccionada, setEmpresaEventoSeleccionada] = useState(null);
+  const [contactoEventoSeleccionado, setContactoEventoSeleccionado] = useState(null);
+  const [openCalendario, setOpenCalendario] = useState(false);
+  const [openCrearOportunidad, setOpenCrearOportunidad] = useState(false);
 
 
   // Cargar usuario desde localStorage
@@ -199,247 +201,248 @@ const [contactoEventoSeleccionado, setContactoEventoSeleccionado] = useState(nul
         </ListItem>
         
         <ListItem disablePadding>
-          <ListItemButton onClick={() => { setViewMode('calendar'); isMobile && setDrawerOpen(false); }}>
+          <ListItemButton onClick={() => setOpenCalendario(true)}>
             <ListItemIcon><EventIcon /></ListItemIcon>
             <ListItemText primary="View Events" />
           </ListItemButton>
         </ListItem>
+
         <ListItem disablePadding>
           <ListItemButton>
             <ListItemIcon><PeopleIcon /></ListItemIcon>
             <ListItemText primary="Total contacts" secondary={contactos.length} />
           </ListItemButton>
         </ListItem>
+        
         <ListItem disablePadding>
           <ListItemButton>
             <ListItemIcon><BusinessIcon /></ListItemIcon>
             <ListItemText primary="Total companies" secondary={empresas.length} />
           </ListItemButton>
         </ListItem>
-       
       </List>
     </Box>
   );
 
   const renderEmpresas = () => {
     if (loadingEmpresas || loadingContactos) {
-  return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-      <CircularProgress />
-    </Box>
-  );
-}
-
-if (error) {
-  return (
-    <Alert severity="error" sx={{ mb: 2 }}>
-      {error}
-    </Alert>
-  );
-}
-
-if (empresas.length === 0) {
-  return (
-    <Box textAlign="center" py={4}>
-      <Typography 
-        variant="h6" 
-        color="text.secondary" 
-        gutterBottom
-        sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
-      >
-        No hay empresas registradas
-      </Typography>
-      <Typography 
-        variant="body2" 
-        color="text.secondary"
-        sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}
-      >
-        Crea tu primera empresa para comenzar
-      </Typography>
-    </Box>
-  );
-}
-
-return (
-  <Stack spacing={2}>
-    {empresas.map((empresa) => {
-      const contactosEmpresa = getContactosPorEmpresa(empresa.id);
-      
       return (
-        <Accordion
-          key={empresa.id}
-          sx={{
-            borderRadius: 2,
-            boxShadow: 2,
-            backgroundColor: '#f9f9f9',
-            width: '100%',
-            '&:before': { display: 'none' },
-            '& .MuiAccordionSummary-root': {
-              minHeight: { xs: 56, sm: 64 },
-              px: { xs: 2, sm: 3 },
-              py: { xs: 1, sm: 1.5 }
-            },
-            '& .MuiAccordionDetails-root': {
-              px: { xs: 2, sm: 3 },
-              py: { xs: 2, sm: 2.5 }
-            }
-          }}
-        >
-          <AccordionSummary 
-            expandIcon={<ExpandMoreIcon />}
-            sx={{
-              '& .MuiAccordionSummary-content': {
-                alignItems: 'center'
-              }
-            }}
-          >
-            <Typography 
-              fontWeight="bold" 
-              color="primary"
-              sx={{ 
-                fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
-                wordBreak: 'break-word'
-              }}
-            >
-              {empresa.nombre}
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box 
-              sx={{ 
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
-                gap: { xs: 1.5, sm: 2 },
-                mb: 2
-              }}
-            >
-              <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}>
-                📍 <strong>Address</strong><br />
-                {empresa.direccion || 'No especificada'}
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}>
-                📞 <strong>Phone</strong><br />
-                {empresa.telefono || 'Sin número'}
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}>
-                🔢 <strong>Zip Code</strong><br />
-                {empresa.codigo_postal || '-'}
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}>
-                🌍 <strong>Community or City</strong><br />
-                {empresa.comunidad || '-'}
-              </Typography>
-            </Box>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress />
+        </Box>
+      );
+    }
 
-            <Box mt={2}>
-              <Typography 
-                variant="subtitle2" 
-                color="text.secondary" 
-                sx={{ 
-                  mb: 1,
-                  fontSize: { xs: '0.9rem', sm: '1rem' },
-                  fontWeight: 600 
+    if (error) {
+      return (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      );
+    }
+
+    if (empresas.length === 0) {
+      return (
+        <Box textAlign="center" py={4}>
+          <Typography 
+            variant="h6" 
+            color="text.secondary" 
+            gutterBottom
+            sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
+          >
+            No hay empresas registradas
+          </Typography>
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}
+          >
+            Crea tu primera empresa para comenzar
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Stack spacing={2}>
+        {empresas.map((empresa) => {
+          const contactosEmpresa = getContactosPorEmpresa(empresa.id);
+          
+          return (
+            <Accordion
+              key={empresa.id}
+              sx={{
+                borderRadius: 2,
+                boxShadow: 2,
+                backgroundColor: '#f9f9f9',
+                width: '100%',
+                '&:before': { display: 'none' },
+                '& .MuiAccordionSummary-root': {
+                  minHeight: { xs: 56, sm: 64 },
+                  px: { xs: 2, sm: 3 },
+                  py: { xs: 1, sm: 1.5 }
+                },
+                '& .MuiAccordionDetails-root': {
+                  px: { xs: 2, sm: 3 },
+                  py: { xs: 2, sm: 2.5 }
+                }
+              }}
+            >
+              <AccordionSummary 
+                expandIcon={<ExpandMoreIcon />}
+                sx={{
+                  '& .MuiAccordionSummary-content': {
+                    alignItems: 'center'
+                  }
                 }}
               >
-                Associated contacts
-              </Typography>
-              
-              {contactosEmpresa.length > 0 ? (
-                <Box 
-                  component="ul" 
+                <Typography 
+                  fontWeight="bold" 
+                  color="primary"
                   sx={{ 
-                    paddingLeft: '1.2rem', 
-                    margin: 0,
-                    '& li': {
-                      marginBottom: '0.8rem',
-                      fontSize: { xs: '0.875rem', sm: '0.9rem' }
-                    }
+                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
+                    wordBreak: 'break-word'
                   }}
                 >
-                  {contactosEmpresa.map((contacto) => (
-                    <Box
-                      key={contacto.id}
-                      component="li"
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        mb: '0.8rem',
+                  {empresa.nombre}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Box 
+                  sx={{ 
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
+                    gap: { xs: 1.5, sm: 2 },
+                    mb: 2
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}>
+                    📍 <strong>Address</strong><br />
+                    {empresa.direccion || 'No especificada'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}>
+                    📞 <strong>Phone</strong><br />
+                    {empresa.telefono || 'Sin número'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}>
+                    🔢 <strong>Zip Code</strong><br />
+                    {empresa.codigo_postal || '-'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem' } }}>
+                    🌍 <strong>Community or City</strong><br />
+                    {empresa.comunidad || '-'}
+                  </Typography>
+                </Box>
+
+                <Box mt={2}>
+                  <Typography 
+                    variant="subtitle2" 
+                    color="text.secondary" 
+                    sx={{ 
+                      mb: 1,
+                      fontSize: { xs: '0.9rem', sm: '1rem' },
+                      fontWeight: 600 
+                    }}
+                  >
+                    Associated contacts
+                  </Typography>
+                  
+                  {contactosEmpresa.length > 0 ? (
+                    <Box 
+                      component="ul" 
+                      sx={{ 
+                        paddingLeft: '1.2rem', 
+                        margin: 0,
+                        '& li': {
+                          marginBottom: '0.8rem',
+                          fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                        }
+                      }}
+                    >
+                      {contactosEmpresa.map((contacto) => (
+                        <Box
+                          key={contacto.id}
+                          component="li"
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: '0.8rem',
+                            fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                          }}
+                        >
+                          <Box>
+                            <Box sx={{ mb: 0.5 }}>
+                              <strong>{contacto.nombre}</strong> 
+                              {contacto.cargo && ` – ${contacto.cargo}`}
+                            </Box>
+                            <Box>
+                              {contacto.correo_electronico && (
+                                <Box
+                                  component="span"
+                                  sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
+                                >
+                                  📧 {contacto.correo_electronico}
+                                </Box>
+                              )}
+                              {(contacto.telefono || contacto.telefono_fijo) && (
+                                <Box
+                                  component="span"
+                                  sx={{ fontSize: '0.8rem', color: 'text.secondary', ml: 2 }}
+                                >
+                                  📱 {contacto.telefono || contacto.telefono_fijo}
+                                  {contacto.extension && ` ext. ${contacto.extension}`}
+                                </Box>
+                              )}
+                            </Box>
+                          </Box>
+
+                          <Tooltip title="Crear evento">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setEmpresaEventoSeleccionada(empresa);
+                                setContactoEventoSeleccionado(contacto);
+                                setOpenCrearEvento(true);
+                              }}
+                              sx={{
+                                backgroundColor: '#1976d2',
+                                color: '#fff',
+                                '&:hover': {
+                                  backgroundColor: '#115293',
+                                },
+                                width: 30,
+                                height: 30,
+                                borderRadius: '50%',
+                                fontSize: '1rem',
+                                ml: 2,
+                              }}
+                            >
+                              +
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ 
+                        fontStyle: 'italic',
                         fontSize: { xs: '0.875rem', sm: '0.9rem' }
                       }}
                     >
-                      <Box>
-                        <Box sx={{ mb: 0.5 }}>
-                          <strong>{contacto.nombre}</strong> 
-                          {contacto.cargo && ` – ${contacto.cargo}`}
-                        </Box>
-                        <Box>
-                          {contacto.correo_electronico && (
-                            <Box
-                              component="span"
-                              sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
-                            >
-                              📧 {contacto.correo_electronico}
-                            </Box>
-                          )}
-                          {(contacto.telefono || contacto.telefono_fijo) && (
-                            <Box
-                              component="span"
-                              sx={{ fontSize: '0.8rem', color: 'text.secondary', ml: 2 }}
-                            >
-                              📱 {contacto.telefono || contacto.telefono_fijo}
-                              {contacto.extension && ` ext. ${contacto.extension}`}
-                            </Box>
-                          )}
-                        </Box>
-                      </Box>
-
-                      <Tooltip title="Crear evento">
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            setEmpresaEventoSeleccionada(empresa);
-                            setContactoEventoSeleccionado(contacto); // 👈 importante
-                            setOpenCrearEvento(true);
-                          }}
-                          sx={{
-                            backgroundColor: '#1976d2',
-                            color: '#fff',
-                            '&:hover': {
-                              backgroundColor: '#115293',
-                            },
-                            width: 30,
-                            height: 30,
-                            borderRadius: '50%',
-                            fontSize: '1rem',
-                            ml: 2,
-                          }}
-                        >
-                          +
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  ))}
+                      There are no contacts registered for this company
+                    </Typography>
+                  )}
                 </Box>
-              ) : (
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary"
-                  sx={{ 
-                    fontStyle: 'italic',
-                    fontSize: { xs: '0.875rem', sm: '0.9rem' }
-                  }}
-                >
-                  There are no contacts registered for this company
-                </Typography>
-              )}
-            </Box>
-          </AccordionDetails>
-        </Accordion>
-      );
-    })}
-  </Stack>
-);
+              </AccordionDetails>
+            </Accordion>
+          );
+        })}
+      </Stack>
+    );
   };
 
   return (
@@ -461,7 +464,7 @@ return (
                 startIcon={<BusinessIcon />}
                 onClick={() => setOpenCrearEmpresa(true)}
               >
-                Created Company
+                Create Company
               </Button>
               <Button
                 color="inherit"
@@ -470,13 +473,10 @@ return (
               >
                 Add Contact
               </Button>
-              <Button
-                color="inherit"
-                startIcon={<EmojiEventsIcon/>}
-                onClick={() => setOpenCrearContacto(true)}
-              >
-                Create Oportunity
-              </Button>
+              <Button color="inherit" startIcon={<EmojiEventsIcon />} onClick={() => setOpenCrearOportunidad(true)}>
+  Create Opportunity
+</Button>
+
               <Button color="inherit" startIcon={<LogoutIcon />} onClick={handleLogout}>
                 Logout
               </Button>
@@ -523,14 +523,26 @@ return (
       >
         <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
           <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-            Companys Registered
+            Companies Registered
           </Typography>
           
           {renderEmpresas()}
         </Container>
       </Box>
 
-      
+      <CrearOportunidadModal
+  open={openCrearOportunidad}
+  onClose={() => setOpenCrearOportunidad(false)}
+  empresas={empresas}
+  contactos={contactos}
+  onCreated={() => {/* si quieres refrescar datos o mostrar mensaje */}}
+/>
+
+
+      <ModalCalendario
+        open={openCalendario}
+        onClose={() => setOpenCalendario(false)}
+      />
 
       <CrearEmpresaModal
         open={openCrearEmpresa}
@@ -541,16 +553,15 @@ return (
       <CrearContactoModal
         open={openCrearContacto}
         onClose={() => setOpenCrearContacto(false)}
-        onCreate
-        d={handleContactoCreated}
+        onCreated={handleContactoCreated}
       />
 
       <CrearEventoModal
-  open={openCrearEvento}
-  onClose={() => setOpenCrearEvento(false)}
-  empresa={empresaEventoSeleccionada}
-  contacto={contactoEventoSeleccionado}
-/>
+        open={openCrearEvento}
+        onClose={() => setOpenCrearEvento(false)}
+        empresa={empresaEventoSeleccionada}
+        contacto={contactoEventoSeleccionado}
+      />
     </Box>
   );
 };
