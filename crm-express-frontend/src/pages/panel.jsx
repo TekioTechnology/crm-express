@@ -4,7 +4,7 @@ import {
   AppBar, Toolbar, IconButton, Typography, Drawer, List, ListItem, ListItemButton,
   ListItemIcon, ListItemText, Box, Button, useTheme, useMediaQuery, Stack,
   Accordion, AccordionSummary, AccordionDetails, CircularProgress,
-  Container, Alert, Tooltip, Chip
+  Container, Alert, Tooltip, Chip,TextField, MenuItem, IconButton as MuiIconButton,
 } from '@mui/material';
 import EventIcon from '@mui/icons-material/Event';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -581,11 +581,40 @@ const Panel = () => {
                             </Box>
                           )}
 
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              Modified: {new Date(oportunidad.modify_date).toLocaleDateString('es-ES')}
-                            </Typography>
-                          </Box>
+ {/* NUEVO CAMPO: Status Opportunity */}
+  <Box sx={{ mb: 1 }}>
+    <TextField
+      select
+      label="Status"
+      size="small"
+      fullWidth
+      value={oportunidad.status_oportunidad || 'in_progress'}
+      onChange={async (e) => {
+        const nuevoEstado = e.target.value;
+        try {
+          await axios.patch(
+            `https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/oportunidades/${oportunidad.id_oportunidad}`,
+            { status_oportunidad: nuevoEstado },
+            {
+              headers: {
+                'x-id-usuario-crm': user.id_usuario_crm,
+                'x-created-by': user.created_by,
+              },
+            }
+          );
+        } catch (error) {
+          console.error('❌ Error al actualizar estado de oportunidad:', error);
+        }
+      }}
+    >
+      <MenuItem value="in_progress">In Progress</MenuItem>
+      <MenuItem value="winner">Winner</MenuItem>
+      <MenuItem value="loss">Loss</MenuItem>
+    </TextField>
+  </Box>
+
+
+                         
                         </Box>
                       ))}
                     </Stack>

@@ -15,6 +15,9 @@ const CrearOportunidadModal = ({ open, onClose }) => {
   const [listado, setListado] = useState('');
   const [valor, setValor] = useState('');
 
+
+
+
   // 1) Cargar usuario
   useEffect(() => {
     const stored = localStorage.getItem('user_crm');
@@ -137,6 +140,8 @@ const CrearOportunidadModal = ({ open, onClose }) => {
           sx={{ mb: 2 }}
         />
       </DialogContent>
+    
+
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
         <Button onClick={handleSubmit} variant="contained">Crear</Button>
