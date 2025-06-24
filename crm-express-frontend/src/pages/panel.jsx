@@ -19,7 +19,6 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AddIcon from '@mui/icons-material/Add';
 import Divider from '@mui/material/Divider';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 
 
@@ -31,6 +30,13 @@ import ModalCalendario from '../components/ModalCalendario';
 import CrearOportunidadModal from '../components/CrearOportunidadModal';
 import CambiarEstadoOportunidad from '../components/CambiarEstadoOportunidad';
 import ModalEliminarEmpresa from '../components/ModalEliminarEmpresa';
+
+import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+import DomainDisabledIcon from '@mui/icons-material/DomainDisabled';
+import ModalListaEliminarContactos from "../components/ModalEliminarContacto";
+import ModalListaEliminarOportunidades from "../components/ModalEliminarOportunidades";
+
 
 
 
@@ -61,6 +67,13 @@ const Panel = () => {
   const [openEliminarEmpresa, setOpenEliminarEmpresa] = useState(false);
   const [openEditarEvento, setOpenEditarEvento] = useState(false);
 const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
+const [oportunidadSeleccionada, setOportunidadSeleccionada] = useState(null);
+
+const [openEliminarContactos, setOpenEliminarContactos] = useState(false);
+const [openEliminarOportunidades, setOpenEliminarOportunidades] = useState(false);
+
+
+
 
 
 
@@ -318,6 +331,33 @@ const [filtro, setFiltro] = useState('');
         </ListItemButton>
       </ListItem>
 
+
+        <ListItem disablePadding>
+  <ListItemButton onClick={() => setOpenEliminarContactos(true)}>
+    <ListItemIcon><PersonRemoveIcon /></ListItemIcon>
+    <ListItemText primary="Delete Contact" />
+  </ListItemButton>
+</ListItem>
+
+
+<ListItem disablePadding>
+  <ListItemButton onClick={() => setOpenEliminarOportunidades(true)}>
+    <ListItemIcon><RemoveCircleOutlineIcon /></ListItemIcon>
+    <ListItemText primary="Delete Opportunity" />
+  </ListItemButton>
+</ListItem>
+
+
+<ListItem disablePadding>
+  <ListItemButton onClick={() => setOpenEliminarEmpresa(true)}>
+    <ListItemIcon>
+      <DomainDisabledIcon />
+    </ListItemIcon>
+    <ListItemText primary="Delete Company" />
+  </ListItemButton>
+</ListItem>
+
+
       {/* SOLO EN MÓVIL */}
       {isMobile && (
         <>
@@ -343,12 +383,32 @@ const [filtro, setFiltro] = useState('');
             </ListItemButton>
           </ListItem>
 
-          <ListItem disablePadding>
-            <ListItemButton onClick={() => setOpenEliminarEmpresa(false)}>
-              <ListItemIcon><DeleteIcon /></ListItemIcon>
-              <ListItemText primary="Delete Company" />
-            </ListItemButton>
-          </ListItem>
+<ListItem disablePadding>
+  <ListItemButton>
+    <ListItemIcon>
+      <PersonRemoveIcon />
+    </ListItemIcon>
+    <ListItemText primary="Delete Contact" />
+  </ListItemButton>
+</ListItem>
+
+<ListItem disablePadding>
+  <ListItemButton>
+    <ListItemIcon>
+      <RemoveCircleOutlineIcon />
+    </ListItemIcon>
+    <ListItemText primary="Delete Opportunity" />
+  </ListItemButton>
+</ListItem>
+
+<ListItem disablePadding>
+  <ListItemButton onClick={() => setOpenEliminarEmpresa(true)}>
+    <ListItemIcon>
+      <DomainDisabledIcon />
+    </ListItemIcon>
+    <ListItemText primary="Delete Company" />
+  </ListItemButton>
+</ListItem>
 
           <ListItem disablePadding>
             <ListItemButton onClick={handleLogout}>
@@ -501,39 +561,74 @@ const [filtro, setFiltro] = useState('');
                 {oportunidadesEmpresa.length > 0 ? (
                   <Stack spacing={1.5}>
                     {oportunidadesEmpresa.map((oportunidad) => (
-                      <Box key={oportunidad.id_oportunidad} sx={{ backgroundColor: '#e3f2fd', borderRadius: 2, p: 2, border: '1px solid #bbdefb' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1976d2' }}>🎯
-                             {oportunidad.nombre_oportunidad}
-                          </Typography>
-                           <Typography variant="subtitle2" sx={{ color: '#555' }}>
-      <b>Business area:</b> {oportunidad.business_area || <i>Not defined</i>}
+                      <Box
+  key={oportunidad.id_oportunidad}
+  sx={{
+    backgroundColor: '#e3f2fd',
+    borderRadius: 2,
+    p: 2,
+    border: '1px solid #bbdefb',
+    mb: 1
+  }}
+>
+  {/* Primera fila: Nombre + lápiz + importe */}
+  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+        🎯 {oportunidad.nombre_oportunidad}
       </Typography>
- <Typography variant="body2" sx={{ color: '#555' }}>
+     <Tooltip title="Editar oportunidad">
+  <IconButton
+    size="small"
+    onClick={() => {
+      setOportunidadSeleccionada(oportunidad);
+      setOpenCrearOportunidad(true);
+    }}
+  >
+    <EditIcon fontSize="small" />
+  </IconButton>
+</Tooltip>
+
+
+    </Box>
+    <Chip
+      label={formatCurrency(oportunidad.valor_oportunidad)}
+      color="success"
+      size="small"
+      sx={{ fontWeight: 'bold' }}
+    />
+  </Box>
+
+  {/* Segunda fila: Business area y Zone */}
+  <Box sx={{ display: 'flex', gap: 4, mt: 0.5 }}>
+    <Typography variant="subtitle2" sx={{ color: '#555', fontStyle: 'italic' }}>
+      <b>Business area:</b> {oportunidad.business_area || <i>Not defined</i>}
+    </Typography>
+    <Typography variant="subtitle2" sx={{ color: '#555', fontStyle: 'italic' }}>
       <b>Zone:</b> {oportunidad.zone || <i>Not defined</i>}
     </Typography>
-                        
+  </Box>
 
-  
-   
+  {/* El resto de la tarjeta */}
+  <Typography variant="body2" sx={{ mt: 1 }}>
+    👤 <strong>Lead:</strong> {oportunidad.lead_empresa}
+  </Typography>
+  {oportunidad.seguimiento && (
+    <Typography variant="body2">📋 <strong>Follow-up:</strong> {oportunidad.seguimiento}</Typography>
+  )}
+  {oportunidad.listado && (
+    <Typography variant="body2">📝 <strong>Catalog:</strong> {oportunidad.listado}</Typography>
+  )}
 
-   
- 
+  <Box sx={{ mt: 1 }}>
+    <CambiarEstadoOportunidad
+      idOportunidad={oportunidad.id_oportunidad}
+      idEmpresa={oportunidad.id_empresa_crm}
+      user={user}
+    />
+  </Box>
+</Box>
 
-                          <Chip label={formatCurrency(oportunidad.valor_oportunidad)} color="success" size="small" sx={{ fontWeight: 'bold' }} />
-                        </Box>
-                        <Typography variant="body2">👤 <strong>Lead:</strong> {oportunidad.lead_empresa}</Typography>
-                        {oportunidad.seguimiento && <Typography variant="body2">📋 <strong>Follow-up:</strong> {oportunidad.seguimiento}</Typography>}
-                        {oportunidad.listado && <Typography variant="body2">📝 <strong>Catalog:</strong> {oportunidad.listado}</Typography>}
-                        <Box sx={{ mt: 1 }}>
-                          <CambiarEstadoOportunidad
-  idOportunidad={oportunidad.id_oportunidad}
-  idEmpresa={oportunidad.id_empresa_crm}
-  user={user}
-/>
-
-                        </Box>
-                      </Box>
                     ))}
                   </Stack>
                 ) : (
@@ -598,13 +693,12 @@ const [filtro, setFiltro] = useState('');
               Create Opportunity
             </Button>
 
-            <Button 
-  color="inherit" 
-  startIcon={<DeleteIcon />} 
-  onClick={() => setOpenEliminarEmpresa(true)}
->
-  Delete Company
-</Button>
+
+
+
+
+
+          
 
 
             
@@ -724,11 +818,16 @@ const [filtro, setFiltro] = useState('');
 
 
     <CrearOportunidadModal
-      open={openCrearOportunidad}
-      onClose={() => setOpenCrearOportunidad(false)}
-      onCreated={handleOportunidadCreated}
-      empresas={empresas}
-    />
+  open={openCrearOportunidad}
+  onClose={() => {
+    setOpenCrearOportunidad(false);
+    setOportunidadSeleccionada(null);
+  }}
+  oportunidad={oportunidadSeleccionada}
+  empresas={empresas}
+  onCreated={handleOportunidadCreated}
+/>
+
 
 <ModalEliminarEmpresa
   open={openEliminarEmpresa}
@@ -737,6 +836,18 @@ const [filtro, setFiltro] = useState('');
   user={user} // <-- pásalo así
 />
 
+<ModalListaEliminarContactos
+  open={openEliminarContactos}
+  onClose={() => setOpenEliminarContactos(false)}
+  user={user}
+  empresas={empresas}
+/>
+<ModalListaEliminarOportunidades
+  open={openEliminarOportunidades}
+  onClose={() => setOpenEliminarOportunidades(false)}
+  user={user}
+  empresas={empresas}
+/>
 
 
 

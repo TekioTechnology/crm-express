@@ -4,6 +4,9 @@ import {
   TextField, Button, MenuItem, Checkbox, FormControlLabel, Select, InputLabel, FormControl
 } from '@mui/material';
 import axios from 'axios';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+
 
 const LEAD_OPTIONS = [
   { value: 'Pending data collection', label: 'Pending data collection' },
@@ -17,10 +20,8 @@ const LEAD_OPTIONS = [
   { value: 'Negotiation/Review', label: 'Negotiation/Review' }
 ];
 
-
-const CrearOportunidadModal = ({ open, onClose }) => {
+const CrearOportunidadModal = ({ open, onClose, oportunidad, empresas = [], onCreated }) => {
   const [user, setUser] = useState(null);
-  const [empresas, setEmpresas] = useState([]);
   const [selectedEmpresa, setSelectedEmpresa] = useState(null);
   const [nombreOportunidad, setNombreOportunidad] = useState('');
   const [leadChecked, setLeadChecked] = useState(false);
@@ -31,6 +32,19 @@ const CrearOportunidadModal = ({ open, onClose }) => {
   const [businessArea, setBusinessArea] = useState('');
   const [zone, setZone] = useState('');
 
+
+
+  const [snackbar, setSnackbar] = useState({
+  open: false,
+  message: '',
+  severity: 'success', // o 'error', 'info', etc.
+});
+
+
+const mostrarSnackbar = (message, severity = 'success') => {
+  setSnackbar({ open: true, message, severity });
+};
+
   // Cargar usuario
   useEffect(() => {
     const stored = localStorage.getItem('user_crm');
@@ -40,31 +54,26 @@ const CrearOportunidadModal = ({ open, onClose }) => {
     }
   }, []);
 
-  // Cargar empresas
+  // Rellenar datos al abrir el modal según modo (creación o edición)
   useEffect(() => {
-    if (!user) return;
-    const fetchEmpresas = async () => {
-      try {
-        const res = await axios.get(
-          'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/empresas',
-          {
-            headers: {
-              'x-id-usuario-crm': user.id_usuario_crm,
-              'x-created-by': user.created_by,
-            },
-          }
-        );
-        setEmpresas(Array.isArray(res.data) ? res.data : []);
-      } catch (error) {
-        console.error('Error al cargar empresas', error);
-      }
-    };
-    fetchEmpresas();
-  }, [user]);
+    if (open && oportunidad) {
+          let empresa = empresas.find(e => e.id === oportunidad.id_empresa_crm);
 
-  // Reset campos al abrir/cerrar
-  useEffect(() => {
-    if (!open) {
+      // Modo edición
+      setSelectedEmpresa({
+        id: oportunidad.id_empresa_crm,
+      nombre: empresa ? empresa.nombre : oportunidad.nombre_empresa || ''
+      });
+      setNombreOportunidad(oportunidad.nombre_oportunidad || '');
+      setBusinessArea(oportunidad.business_area || '');
+      setZone(oportunidad.zone || '');
+      setLeadChecked(!!oportunidad.lead_empresa);
+      setLeadEmpresa(oportunidad.lead_empresa || '');
+      setSeguimiento(oportunidad.seguimiento || '');
+      setListado(oportunidad.listado || '');
+      setValor(oportunidad.valor_oportunidad || '');
+    } else if (open) {
+      // Modo creación
       setSelectedEmpresa(null);
       setNombreOportunidad('');
       setLeadChecked(false);
@@ -75,28 +84,49 @@ const CrearOportunidadModal = ({ open, onClose }) => {
       setBusinessArea('');
       setZone('');
     }
-  }, [open]);
+  }, [open, oportunidad,empresas]);
 
-  const handleSubmit = async () => {
-    if (!selectedEmpresa || !user) {
-      console.warn('Faltan datos obligatorios.');
-      return;
-    }
+ const handleSubmit = async () => {
+  if (!selectedEmpresa || !user) {
+    mostrarSnackbar('Faltan datos obligatorios.', 'error');
+    return;
+  }
 
-    const payload = {
-      id_empresa_crm: selectedEmpresa.id,
-      nombre_empresa: selectedEmpresa.nombre,
-      nombre_oportunidad: nombreOportunidad,
-      business_area: businessArea,
-      zone: zone,
-      lead_empresa: leadChecked ? leadEmpresa : '',
-      seguimiento,
-      listado,
-      valor_oportunidad: parseFloat(valor),
-      created_by: user.created_by
-    };
+  // Construye el payload base
+ const payload = {
+  nombre_empresa: selectedEmpresa.nombre,
+  nombre_oportunidad: nombreOportunidad,
+  lead_empresa: leadChecked ? leadEmpresa : '',
+  id_empresa_crm: selectedEmpresa.id,
+  valor_oportunidad: parseFloat(valor),
+  created_by: user.created_by, // OJO: debe ir el correo del usuario actual
+  bussiness_area: businessArea,
+  zone: zone
+};
 
-    try {
+  // Añade id_empresa_crm solo en creación
+  if (!oportunidad) {
+    payload.id_empresa_crm = selectedEmpresa.id;
+  }
+
+  try {
+    if (oportunidad) {
+      // PUT editar
+      await axios.put(
+        `https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/oportunidad/${oportunidad.id_oportunidad}`,
+        payload,
+        {
+          headers: {
+            'x-id-usuario-crm': user.id_usuario_crm,
+            'x-created-by': user.created_by,
+          },
+        }
+      );
+      mostrarSnackbar('Oportunidad actualizada correctamente', 'success');
+      if (onCreated) onCreated();
+      onClose();
+    } else {
+      // POST crear
       await axios.post(
         'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/crear-oportunidad',
         payload,
@@ -107,15 +137,25 @@ const CrearOportunidadModal = ({ open, onClose }) => {
           },
         }
       );
+      mostrarSnackbar('Oportunidad creada correctamente', 'success');
+      if (onCreated) onCreated();
       onClose();
-    } catch (err) {
-      console.error('❌ Error al crear oportunidad:', err);
     }
-  };
+  } catch (err) {
+    console.error('❌ Error al guardar oportunidad:', err);
+    // Muestra siempre el mensaje de error y NO cierres el modal
+    let msg = 'Error al guardar la oportunidad';
+    if (err?.response?.data?.message) {
+      msg += `: ${err.response.data.message}`;
+    }
+    mostrarSnackbar(msg, 'error');
+  }
+};
+
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Create Opportunity</DialogTitle>
+      <DialogTitle>{oportunidad ? 'Edit Opportunity' : 'Create Opportunity'}</DialogTitle>
       <DialogContent>
         <TextField
           label="Company"
@@ -127,6 +167,7 @@ const CrearOportunidadModal = ({ open, onClose }) => {
             setSelectedEmpresa(emp || null);
           }}
           sx={{ mb: 2 }}
+          disabled={!!oportunidad}
         >
           {empresas.map(emp => (
             <MenuItem key={emp.id} value={emp.id}>
@@ -143,7 +184,6 @@ const CrearOportunidadModal = ({ open, onClose }) => {
           sx={{ mb: 2 }}
         />
 
-        {/* Nuevo campo Business area */}
         <TextField
           label="Business area"
           fullWidth
@@ -152,7 +192,6 @@ const CrearOportunidadModal = ({ open, onClose }) => {
           sx={{ mb: 2 }}
         />
 
-        {/* Nuevo campo Zone */}
         <TextField
           label="Zone"
           fullWidth
@@ -161,7 +200,6 @@ const CrearOportunidadModal = ({ open, onClose }) => {
           sx={{ mb: 2 }}
         />
 
-        {/* Campo Lead con checkbox y select */}
         <FormControlLabel
           control={
             <Checkbox
@@ -191,8 +229,6 @@ const CrearOportunidadModal = ({ open, onClose }) => {
           </FormControl>
         )}
 
-        
-        
         <TextField
           label="Opportunity value (€)"
           type="number"
@@ -205,7 +241,9 @@ const CrearOportunidadModal = ({ open, onClose }) => {
 
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">Create</Button>
+        <Button onClick={handleSubmit} variant="contained">
+          {oportunidad ? 'Edit' : 'Create'}
+        </Button>
       </DialogActions>
     </Dialog>
   );
