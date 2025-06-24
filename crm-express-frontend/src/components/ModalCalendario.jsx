@@ -13,7 +13,8 @@ import {
   Divider,
   Card,
   CardContent,
-  Tooltip
+  Tooltip,
+  Button
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -23,7 +24,11 @@ import BusinessIcon from '@mui/icons-material/Business';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
+import EditIcon from '@mui/icons-material/Edit';
 import axios from 'axios';
+import useOutlookCalendar from '../hooks/useOutlookCalendar';
+import CrearEventoModal from './CrearEventoModal'; // ajusta ruta si necesario
+
 
 const ModalCalendario = ({ open, onClose }) => {
   const [eventos, setEventos] = useState([]);
@@ -32,6 +37,10 @@ const ModalCalendario = ({ open, onClose }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [user, setUser] = useState(null);
+  const { agregarEventoOutlook } = useOutlookCalendar();
+
+  const [openEditar, setOpenEditar] = useState(false);
+  const [eventoEditar, setEventoEditar] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user_crm');
@@ -78,18 +87,18 @@ const ModalCalendario = ({ open, onClose }) => {
   };
 
   const getEventosForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return eventos.filter(evento => {
-      const eventoDate = new Date(evento.fecha_evento).toISOString().split('T')[0];
-      return eventoDate === dateStr;
-    });
-  };
+  const dateStr = date.toLocaleDateString('en-CA'); // Formato YYYY-MM-DD
+  return eventos.filter(evento => {
+    const eventoDate = new Date(evento.fecha_evento).toLocaleDateString('en-CA');
+    return eventoDate === dateStr;
+  });
+};
+
 
   const generateCalendarDays = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
     const days = [];
@@ -129,16 +138,69 @@ const ModalCalendario = ({ open, onClose }) => {
     });
   };
 
+
+ const handleEditEvent = (evento) => {
+  setEventoEditar(evento);
+  setOpenEditar(true);
+};
+
+  const handleCloseEditar = (editado) => {
+  setOpenEditar(false);
+  setEventoEditar(null);
+  if (editado) fetchEventos(); // Si se editó, recarga eventos
+};
+
+  const handleSyncWithOutlook = async () => {
+  const eventosDelMes = eventos.filter(evento => {
+    const fecha = new Date(evento.fecha_evento);
+    return fecha.getMonth() === currentDate.getMonth() &&
+           fecha.getFullYear() === currentDate.getFullYear();
+  });
+
+  if (eventosDelMes.length === 0) {
+    alert('No hay eventos para sincronizar este mes.');
+    return;
+  }
+
+  for (const evento of eventosDelMes) {
+    try {
+      await agregarEventoOutlook(evento);
+    } catch (err) {
+      console.error('❌ Error al sincronizar evento:', evento, err);
+    }
+  }
+
+  alert(`✅ ${eventosDelMes.length} evento(s) sincronizado(s) con Outlook.`);
+};
+
+
   const renderEventDetail = () => {
     if (!selectedEvent) return null;
     return (
       <Card sx={{ mt: 2, backgroundColor: '#f8f9fa' }}>
         <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <EventIcon color="primary" sx={{ mr: 1 }} />
-            <Typography variant="h6" component="h3">
-              {selectedEvent.nombre_evento}
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <EventIcon color="primary" sx={{ mr: 1 }} />
+              <Typography variant="h6" component="h3">
+                {selectedEvent.nombre_evento}
+              </Typography>
+            </Box>
+            
+            <Tooltip title="Editar evento">
+              <IconButton 
+                color="primary" 
+                onClick={() => handleEditEvent(selectedEvent)}
+                sx={{ 
+                  backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                  }
+                }}
+              >
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
 
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -190,105 +252,127 @@ const ModalCalendario = ({ open, onClose }) => {
               </Box>
             )}
           </Box>
+
+          <Button
+            variant="contained"
+            sx={{ mt: 3 }}
+            onClick={() => agregarEventoOutlook(selectedEvent)}
+          >
+            Añadir a Outlook Calendar
+          </Button>
         </CardContent>
       </Card>
     );
   };
 
   const renderCalendar = () => {
-    const days = generateCalendarDays();
-    const monthHeader = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate);
-    const dayNames = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(1970, 0, 4 + i); // Sunday start
-      dayNames.push(new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(d));
-    }
+  const days = generateCalendarDays();
+  const monthHeader = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate);
+  const dayNames = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(1970, 0, 4 + i); // Sunday start
+    dayNames.push(new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(d));
+  }
 
-    return (
-      <Box sx={{ width: '100%' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <IconButton onClick={() => changeMonth(-1)}>
-            <ChevronLeftIcon />
-          </IconButton>
-          <Typography variant="h6">{monthHeader}</Typography>
-          <IconButton onClick={() => changeMonth(1)}>
-            <ChevronRightIcon />
-          </IconButton>
-        </Box>
-
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, mb: 1 }}>
-          {dayNames.map(day => (
-            <Box key={day} sx={{ textAlign: 'center', p: 1 }}>
-              <Typography variant="caption" fontWeight="bold" color="text.secondary">
-                {day}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, minHeight: '300px' }}>
-          {days.map((day, idx) => {
-            const eventosDelDia = getEventosForDate(day);
-            const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-            const isToday = day.toDateString() === new Date().toDateString();
-            return (
-              <Paper
-                key={idx}
-                elevation={eventosDelDia.length > 0 ? 2 : 0}
-                sx={{
-                  minHeight: 50,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  cursor: eventosDelDia.length > 0 ? 'pointer' : 'default',
-                  backgroundColor: eventosDelDia.length > 0
-                    ? '#4caf50'
-                    : isToday
-                      ? '#e3f2fd'
-                      : 'transparent',
-                  color: eventosDelDia.length > 0
-                    ? 'white'
-                    : isCurrentMonth
-                      ? 'text.primary'
-                      : 'text.disabled',
-                  opacity: isCurrentMonth ? 1 : 0.5,
-                  transition: 'all 0.2s ease',
-                  '&:hover': eventosDelDia.length > 0
-                    ? { backgroundColor: '#388e3c', transform: 'scale(1.05)' }
-                    : {},
-                  border: isToday ? '2px solid #2196f3' : 'none'
-                }}
-                onClick={() => eventosDelDia.length > 0 && setSelectedEvent(eventosDelDia[0])}
-              >
-                <Typography variant="body2" fontWeight={isToday ? 'bold' : 'normal'}>
-                  {day.getDate()}
-                </Typography>
-                {eventosDelDia.length > 0 && (
-                  <Tooltip title={`${eventosDelDia.length} event(s)`}>
-                    <Chip
-                      size="small"
-                      label={eventosDelDia.length}
-                      sx={{ height: 16, fontSize: '0.6rem', backgroundColor: 'rgba(255,255,255,0.3)', color: 'white', mt: 0.5 }}
-                    />
-                  </Tooltip>
-                )}
-              </Paper>
-            );
-          })}
-        </Box>
+  return (
+    <Box sx={{ width: '100%' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <IconButton onClick={() => changeMonth(-1)}>
+          <ChevronLeftIcon />
+        </IconButton>
+        <Typography variant="h6">{monthHeader}</Typography>
+        <IconButton onClick={() => changeMonth(1)}>
+          <ChevronRightIcon />
+        </IconButton>
       </Box>
-    );
-  };
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, mb: 1 }}>
+        {dayNames.map(day => (
+          <Box key={day} sx={{ textAlign: 'center', p: 1 }}>
+            <Typography variant="caption" fontWeight="bold" color="text.secondary">
+              {day}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, minHeight: '300px' }}>
+        {days.map((day, idx) => {
+          const eventosDelDia = getEventosForDate(day);
+          const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+          const isToday = day.toDateString() === new Date().toDateString();
+          return (
+            <Paper
+              key={idx}
+              elevation={eventosDelDia.length > 0 ? 2 : 0}
+              sx={{
+                minHeight: 50,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                cursor: eventosDelDia.length > 0 ? 'pointer' : 'default',
+                backgroundColor: eventosDelDia.length > 0
+                  ? '#4caf50'
+                  : isToday
+                    ? '#e3f2fd'
+                    : 'transparent',
+                color: eventosDelDia.length > 0
+                  ? 'white'
+                  : isCurrentMonth
+                    ? 'text.primary'
+                    : 'text.disabled',
+                opacity: isCurrentMonth ? 1 : 0.5,
+                transition: 'all 0.2s ease',
+                '&:hover': eventosDelDia.length > 0
+                  ? { backgroundColor: '#388e3c', transform: 'scale(1.05)' }
+                  : {},
+                border: isToday ? '2px solid #2196f3' : 'none'
+              }}
+              onClick={() => eventosDelDia.length > 0 && setSelectedEvent(eventosDelDia[0])}
+            >
+              <Typography variant="body2" fontWeight={isToday ? 'bold' : 'normal'}>
+                {day.getDate()}
+              </Typography>
+              {eventosDelDia.length > 0 && (
+                <Tooltip title={`${eventosDelDia.length} event(s)`}>
+                  <Chip
+                    size="small"
+                    label={eventosDelDia.length}
+                    sx={{ height: 16, fontSize: '0.6rem', backgroundColor: 'rgba(255,255,255,0.3)', color: 'white', mt: 0.5 }}
+                  />
+                </Tooltip>
+              )}
+            </Paper>
+          );
+        })}
+      </Box>
+    </Box>
+  );
+};
+
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        Calendar of Events
-        <IconButton onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+      <DialogTitle>
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Typography variant="h6">Calendar of Events</Typography>
+    <Box>
+      <Button
+        variant="outlined"
+        size="small"
+        sx={{ mr: 1 }}
+        onClick={handleSyncWithOutlook}
+      >
+        Sync my calendar with Outlook
+      </Button>
+      <IconButton onClick={onClose}>
+        <CloseIcon />
+      </IconButton>
+    </Box>
+  </Box>
+</DialogTitle>
+
       <DialogContent dividers>
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
@@ -313,6 +397,12 @@ const ModalCalendario = ({ open, onClose }) => {
               <>
                 {renderCalendar()}
                 {selectedEvent && renderEventDetail()}
+                 <CrearEventoModal
+    open={openEditar}
+    onClose={handleCloseEditar}
+    evento={eventoEditar}
+    modoEdicion={true}
+  />
               </>
             )}
           </Box>

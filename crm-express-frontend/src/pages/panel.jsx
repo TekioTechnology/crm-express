@@ -17,6 +17,12 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AddIcon from '@mui/icons-material/Add';
+import Divider from '@mui/material/Divider';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+
+
+
 
 import CrearEmpresaModal from '../components/crearEmpresaModal';
 import CrearContactoModal from '../components/CrearContactoModal';
@@ -24,6 +30,8 @@ import CrearEventoModal from '../components/CrearEventoModal';
 import ModalCalendario from '../components/ModalCalendario';
 import CrearOportunidadModal from '../components/CrearOportunidadModal';
 import CambiarEstadoOportunidad from '../components/CambiarEstadoOportunidad';
+import ModalEliminarEmpresa from '../components/ModalEliminarEmpresa';
+
 
 
 const Panel = () => {
@@ -48,6 +56,13 @@ const Panel = () => {
   const [contactoEventoSeleccionado, setContactoEventoSeleccionado] = useState(null);
   const [openCalendario, setOpenCalendario] = useState(false);
   const [openCrearOportunidad, setOpenCrearOportunidad] = useState(false);
+  const [contactoSeleccionado, setContactoSeleccionado] = useState(null);
+
+  const [openEliminarEmpresa, setOpenEliminarEmpresa] = useState(false);
+  const [openEditarEvento, setOpenEditarEvento] = useState(false);
+const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
+
+
 
 
 // ... dentro del componente Panel
@@ -271,45 +286,81 @@ const [filtro, setFiltro] = useState('');
   };
 
   const drawerContent = (
-    <Box sx={{ width: 240, pt: isMobile ? 2 : 8 }}>
-      <List>
-        <ListItem>
-          <ListItemText
-            primary={`Hola, ${user?.created_by || 'Usuario'}`}
-            primaryTypographyProps={{ fontWeight: 'bold' }}
-          />
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => setOpenCalendario(true)}>
-            <ListItemIcon><EventIcon /></ListItemIcon>
-            <ListItemText primary="View Events" />
-          </ListItemButton>
-        </ListItem>
+  <Box sx={{ width: 240, pt: isMobile ? 2 : 8 }}>
+    <List>
+     
 
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon><PeopleIcon /></ListItemIcon>
-            <ListItemText primary="Total contacts" secondary={contactos.length} />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon><BusinessIcon /></ListItemIcon>
-            <ListItemText primary="Total companies" secondary={empresas.length} />
-          </ListItemButton>
-        </ListItem>
+      <ListItem disablePadding>
+        <ListItemButton onClick={() => setOpenCalendario(true)}>
+          <ListItemIcon><EventIcon /></ListItemIcon>
+          <ListItemText primary="View Events" />
+        </ListItemButton>
+      </ListItem>
 
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon><TrendingUpIcon /></ListItemIcon>
-            <ListItemText primary="Total opportunities" secondary={oportunidades.length} />
-          </ListItemButton>
-        </ListItem>
-      </List>
-    </Box>
-  );
+      <ListItem disablePadding>
+        <ListItemButton>
+          <ListItemIcon><PeopleIcon /></ListItemIcon>
+          <ListItemText primary="Total contacts" secondary={contactos.length} />
+        </ListItemButton>
+      </ListItem>
+
+      <ListItem disablePadding>
+        <ListItemButton>
+          <ListItemIcon><BusinessIcon /></ListItemIcon>
+          <ListItemText primary="Total companies" secondary={empresas.length} />
+        </ListItemButton>
+      </ListItem>
+
+      <ListItem disablePadding>
+        <ListItemButton>
+          <ListItemIcon><TrendingUpIcon /></ListItemIcon>
+          <ListItemText primary="Total opportunities" secondary={oportunidades.length} />
+        </ListItemButton>
+      </ListItem>
+
+      {/* SOLO EN MÓVIL */}
+      {isMobile && (
+        <>
+          <Divider sx={{ my: 1 }} />
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => setOpenCrearEmpresa(true)}>
+              <ListItemIcon><BusinessIcon /></ListItemIcon>
+              <ListItemText primary="Create Company" />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => setOpenCrearContacto(true)}>
+              <ListItemIcon><PersonAddIcon /></ListItemIcon>
+              <ListItemText primary="Add Contact" />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => setOpenCrearOportunidad(true)}>
+              <ListItemIcon><EmojiEventsIcon /></ListItemIcon>
+              <ListItemText primary="Create Opportunity" />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => setOpenEliminarEmpresa(false)}>
+              <ListItemIcon><DeleteIcon /></ListItemIcon>
+              <ListItemText primary="Delete Company" />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleLogout}>
+              <ListItemIcon><LogoutIcon /></ListItemIcon>
+              <ListItemText primary="Logout" />
+            </ListItemButton>
+          </ListItem>
+        </>
+      )}
+    </List>
+  </Box>
+);
 
   const renderEmpresas = () => {
   const empresasFiltradas = empresas.filter((empresa) => {
@@ -367,6 +418,20 @@ const [filtro, setFiltro] = useState('');
               <Typography fontWeight="bold" color="primary">
                 {empresa.nombre}
               </Typography>
+               <Tooltip title="Editar empresa">
+  <IconButton
+    component="span"      // <-- Esto soluciona el error
+    size="small"
+    onClick={(e) => {
+      e.stopPropagation();
+      setEmpresaSeleccionada(empresa);
+      setOpenCrearEmpresa(true);
+    }}
+  >
+    <EditIcon fontSize="small" />
+  </IconButton>
+</Tooltip>
+
             </AccordionSummary>
             <AccordionDetails>
               <Box
@@ -398,7 +463,23 @@ const [filtro, setFiltro] = useState('');
                             )}
                           </Box>
                         </Box>
-                        <Tooltip title="Crear evento">
+
+<Tooltip title="Editar contacto">
+    <IconButton
+      size="small"
+      onClick={() => {
+        setContactoSeleccionado(contacto);
+        setOpenCrearContacto(true);
+      }}
+    >
+      <EditIcon fontSize="small" />
+    </IconButton>
+  </Tooltip>
+
+
+
+
+                        <Tooltip title="Create event">
                           <IconButton size="small" onClick={() => {
                             setEmpresaEventoSeleccionada(empresa);
                             setContactoEventoSeleccionado(contacto);
@@ -422,7 +503,23 @@ const [filtro, setFiltro] = useState('');
                     {oportunidadesEmpresa.map((oportunidad) => (
                       <Box key={oportunidad.id_oportunidad} sx={{ backgroundColor: '#e3f2fd', borderRadius: 2, p: 2, border: '1px solid #bbdefb' }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1976d2' }}>🎯 {oportunidad.nombre_oportunidad}</Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1976d2' }}>🎯
+                             {oportunidad.nombre_oportunidad}
+                          </Typography>
+                           <Typography variant="subtitle2" sx={{ color: '#555' }}>
+      <b>Business area:</b> {oportunidad.business_area || <i>Not defined</i>}
+      </Typography>
+ <Typography variant="body2" sx={{ color: '#555' }}>
+      <b>Zone:</b> {oportunidad.zone || <i>Not defined</i>}
+    </Typography>
+                        
+
+  
+   
+
+   
+ 
+
                           <Chip label={formatCurrency(oportunidad.valor_oportunidad)} color="success" size="small" sx={{ fontWeight: 'bold' }} />
                         </Box>
                         <Typography variant="body2">👤 <strong>Lead:</strong> {oportunidad.lead_empresa}</Typography>
@@ -453,16 +550,30 @@ const [filtro, setFiltro] = useState('');
 
   return (
       <Box sx={{ display: 'flex' }}>
-    <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
+    <AppBar
+  position="fixed"
+  sx={{
+    zIndex: theme.zIndex.drawer + 1,
+    backgroundColor: '#5E6464' // Aquí defines el color de fondo del AppBar
+  }}
+>
       <Toolbar>
         {isMobile && (
           <IconButton color="inherit" edge="start" onClick={toggleDrawer} sx={{ mr: 2 }}>
             <MenuIcon />
           </IconButton>
         )}
-        <Typography variant="h2" sx={{ flexGrow: 1 }}>
-          CRM Tekio Europa
-        </Typography>
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+  <img
+    src="/logo/logo_crm.png"
+    alt="CRM Logo"
+    style={{
+      height: '50px',
+      objectFit: 'contain',
+    }}
+  />
+</Box>
+
         {!isMobile && (
           <Stack direction="row" spacing={2}>
             <Button
@@ -487,6 +598,15 @@ const [filtro, setFiltro] = useState('');
               Create Opportunity
             </Button>
 
+            <Button 
+  color="inherit" 
+  startIcon={<DeleteIcon />} 
+  onClick={() => setOpenEliminarEmpresa(true)}
+>
+  Delete Company
+</Button>
+
+
             
             <Button color="inherit" startIcon={<LogoutIcon />} onClick={handleLogout}>
               Logout
@@ -506,16 +626,20 @@ const [filtro, setFiltro] = useState('');
         {drawerContent}
       </Drawer>
     ) : (
-      <Drawer 
-        variant="permanent" 
-        sx={{ 
-          width: 240, 
-          [`& .MuiDrawer-paper`]: { 
-            width: 240,
-            boxSizing: 'border-box'
-          } 
-        }}
-      >
+      <Drawer
+  variant="permanent"
+  sx={{
+    width: 240,
+    overflowX: 'hidden',
+    [`& .MuiDrawer-paper`]: {
+      width: 240,
+      boxSizing: 'border-box',
+      overflowX: 'hidden',
+    }
+  }}
+>
+
+
         {drawerContent}
       </Drawer>
     )}
@@ -568,24 +692,36 @@ const [filtro, setFiltro] = useState('');
       onClose={() => setOpenCalendario(false)}
     />
 
-    <CrearEmpresaModal
-      open={openCrearEmpresa}
-      onClose={() => setOpenCrearEmpresa(false)}
-      onCreated={handleEmpresaCreated}
-    />
+   <CrearEmpresaModal
+  open={openCrearEmpresa}
+  onClose={() => {
+    setOpenCrearEmpresa(false);
+    setEmpresaSeleccionada(null);
+  }}
+  onCreated={handleEmpresaCreated}
+  empresa={empresaSeleccionada} // <-- añadir esta prop
+/>
 
-    <CrearContactoModal
-      open={openCrearContacto}
-      onClose={() => setOpenCrearContacto(false)}
-      onCreated={handleContactoCreated}
-    />
+   <CrearContactoModal
+  open={openCrearContacto}
+  onClose={() => {
+    setOpenCrearContacto(false);
+    setContactoSeleccionado(null);
+  }}
+  onCreated={handleContactoCreated}
+  contacto={contactoSeleccionado}
+/>
 
-    <CrearEventoModal
-      open={openCrearEvento}
-      onClose={() => setOpenCrearEvento(false)}
-      empresa={empresaEventoSeleccionada}
-      contacto={contactoEventoSeleccionado}
-    />
+
+ <CrearEventoModal
+  open={openCrearEvento}  // <-- cambiar aquí
+  onClose={() => setOpenCrearEvento(false)}
+  empresa={empresaEventoSeleccionada}
+  contacto={contactoEventoSeleccionado}
+  evento={null}           // Al crear, evento es null
+  modoEdicion={false}     // Creación, no edición
+/>
+
 
     <CrearOportunidadModal
       open={openCrearOportunidad}
@@ -593,6 +729,17 @@ const [filtro, setFiltro] = useState('');
       onCreated={handleOportunidadCreated}
       empresas={empresas}
     />
+
+<ModalEliminarEmpresa
+  open={openEliminarEmpresa}
+  onClose={() => setOpenEliminarEmpresa(false)}
+  onDeleted={handleEmpresaCreated}
+  user={user} // <-- pásalo así
+/>
+
+
+
+
   </Box>
   );
 };

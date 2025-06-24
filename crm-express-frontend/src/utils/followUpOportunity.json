@@ -1,0 +1,11 @@
+[
+  { "codigo": 10, "etapa": "Pte. recogida de datos" },
+  { "codigo": 20, "etapa": "Propuesta inicial lanzada" },
+  { "codigo": 30, "etapa": "Pte. realización presupuesto" },
+  { "codigo": 35, "etapa": "Pte.  Perfil RRHH" },
+  { "codigo": 40, "etapa": "Pte. Realizacion Anteproyecto" },
+  { "codigo": 45, "etapa": "Pte. envío de presupuesto" },
+  { "codigo": 50, "etapa": "Pte. decisión cliente" },
+  { "codigo": 60, "etapa": "Pte. decisión Dirección Central" },
+  { "codigo": 70, "etapa": "Negociación/Revisión" }
+]

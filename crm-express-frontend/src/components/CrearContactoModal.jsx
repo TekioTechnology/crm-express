@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 
-const CrearContactoModal = ({ open, onClose, onCreated }) => {
+const CrearContactoModal = ({ open, onClose, onCreated,contacto }) => {
   const [empresas, setEmpresas] = useState([]);
   const [formData, setFormData] = useState({
     id_empresa_crm: '',
@@ -49,18 +49,34 @@ const CrearContactoModal = ({ open, onClose, onCreated }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
+  e.preventDefault();
+  setError('');
+  setSuccess('');
+  setLoading(true);
 
-    try {
-      const userCrm = JSON.parse(localStorage.getItem('user_crm'));
-      if (!userCrm?.id_usuario_crm) {
-        setError('No se encontró el usuario autenticado.');
-        return;
-      }
+  try {
+    const userCrm = JSON.parse(localStorage.getItem('user_crm'));
+    if (!userCrm?.id_usuario_crm) {
+      setError('No se encontró el usuario autenticado.');
+      return;
+    }
 
+    if (contacto && contacto.id) {
+      // EDITAR contacto
+      await axios.put(
+        `https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/contacto/${contacto.id}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-id-usuario-crm': userCrm.id_usuario_crm,
+            'x-created-by': userCrm.created_by,
+          },
+        }
+      );
+      setSuccess('Contacto modificado correctamente.');
+    } else {
+      // CREAR contacto
       await axios.post(
         'https://api-crm-express-c6fuadbucpbkexcp.canadacentral-01.azurewebsites.net/crear-contacto',
         formData,
@@ -72,33 +88,66 @@ const CrearContactoModal = ({ open, onClose, onCreated }) => {
           },
         }
       );
-
       setSuccess('Contacto creado correctamente.');
-      setFormData({
-        id_empresa_crm: '',
-        nombre: '',
-        correo_electronico: '',
-        telefono_fijo: '',
-        telefono: '',
-        extension: '',
-        cargo: '',
-      });
-      onCreated && onCreated();
-    } catch (err) {
-      console.error(err);
-      setError('No se pudo crear el contacto');
-    } finally {
-      setLoading(false);
     }
-  };
+
+    setFormData({
+      id_empresa_crm: '',
+      nombre: '',
+      correo_electronico: '',
+      telefono_fijo: '',
+      telefono: '',
+      extension: '',
+      cargo: '',
+    });
+    onCreated && onCreated();
+  } catch (err) {
+    console.error(err);
+    setError(contacto ? 'No se pudo modificar el contacto' : 'No se pudo crear el contacto');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+useEffect(() => {
+  if (contacto) {
+    setFormData({
+      id_empresa_crm: contacto.id_empresa_crm || '',
+      nombre: contacto.nombre || '',
+      correo_electronico: contacto.correo_electronico || '',
+      telefono_fijo: contacto.telefono_fijo || '',
+      telefono: contacto.telefono || '',
+      extension: contacto.extension || '',
+      cargo: contacto.cargo || '',
+    });
+  } else {
+    setFormData({
+      id_empresa_crm: '',
+      nombre: '',
+      correo_electronico: '',
+      telefono_fijo: '',
+      telefono: '',
+      extension: '',
+      cargo: '',
+    });
+  }
+}, [contacto]);
+
+
+
+
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Crear Nuevo Contacto</DialogTitle>
+      <DialogTitle>
+  {contacto ? 'Modify a Contact' : 'Create new Contact'}
+</DialogTitle>
+
       <DialogContent dividers>
         <Stack spacing={2} mt={1}>
          <FormControl fullWidth required>
-  <InputLabel>Empresa</InputLabel>
+  <InputLabel>Company</InputLabel>
   <Select
     value={formData.id_empresa_crm}
     name="id_empresa_crm"
@@ -114,21 +163,22 @@ const CrearContactoModal = ({ open, onClose, onCreated }) => {
 </FormControl>
 
 
-          <TextField label="Nombre" name="nombre" value={formData.nombre} onChange={handleChange} fullWidth />
-          <TextField label="Correo electrónico" name="correo_electronico" value={formData.correo_electronico} onChange={handleChange} fullWidth />
-          <TextField label="Teléfono fijo" name="telefono_fijo" value={formData.telefono_fijo} onChange={handleChange} fullWidth />
-          <TextField label="Teléfono" name="telefono" value={formData.telefono} onChange={handleChange} fullWidth />
-          <TextField label="Extensión" name="extension" value={formData.extension} onChange={handleChange} fullWidth />
-          <TextField label="Cargo" name="cargo" value={formData.cargo} onChange={handleChange} fullWidth />
+          <TextField label="Name" name="nombre" value={formData.nombre} onChange={handleChange} fullWidth />
+          <TextField label="Email" name="correo_electronico" value={formData.correo_electronico} onChange={handleChange} fullWidth />
+          <TextField label="Phone" name="telefono_fijo" value={formData.telefono_fijo} onChange={handleChange} fullWidth />
+          <TextField label="Landline phone" name="telefono" value={formData.telefono} onChange={handleChange} fullWidth />
+          <TextField label="Extension" name="extension" value={formData.extension} onChange={handleChange} fullWidth />
+          <TextField label="Job Title" name="cargo" value={formData.cargo} onChange={handleChange} fullWidth />
           {error && <Alert severity="error">{error}</Alert>}
           {success && <Alert severity="success">{success}</Alert>}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>Cancelar</Button>
+        <Button onClick={onClose} disabled={loading}>Cancel</Button>
         <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? <CircularProgress size={20} /> : 'Crear'}
-        </Button>
+  {loading ? <CircularProgress size={20} /> : contacto ? 'Modify' : 'Create'}
+</Button>
+
       </DialogActions>
     </Dialog>
   );
