@@ -36,6 +36,7 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import DomainDisabledIcon from '@mui/icons-material/DomainDisabled';
 import ModalListaEliminarContactos from "../components/ModalEliminarContacto";
 import ModalListaEliminarOportunidades from "../components/ModalEliminarOportunidades";
+import ModalChangePassword from '../components/ModalChangePassword';
 
 
 
@@ -71,6 +72,8 @@ const [oportunidadSeleccionada, setOportunidadSeleccionada] = useState(null);
 
 const [openEliminarContactos, setOpenEliminarContactos] = useState(false);
 const [openEliminarOportunidades, setOpenEliminarOportunidades] = useState(false);
+const [openChangePassword, setOpenChangePassword] = useState(false);
+
 
 
 
@@ -330,6 +333,8 @@ const [filtro, setFiltro] = useState('');
           <ListItemText primary="Total opportunities" secondary={oportunidades.length} />
         </ListItemButton>
       </ListItem>
+      
+<Divider sx={{ my: 2 }} />
 
 
         <ListItem disablePadding>
@@ -356,6 +361,17 @@ const [filtro, setFiltro] = useState('');
     <ListItemText primary="Delete Company" />
   </ListItemButton>
 </ListItem>
+
+<Divider sx={{ my: 2 }} />
+
+<ListItem disablePadding sx={{ mt: 2 }}>
+  <ListItemButton onClick={() => setOpenChangePassword(true)}>
+    <ListItemIcon><EditIcon /></ListItemIcon>
+    <ListItemText primary="Change Password" />
+  </ListItemButton>
+</ListItem>
+
+
 
 
       {/* SOLO EN MÓVIL */}
@@ -409,6 +425,19 @@ const [filtro, setFiltro] = useState('');
     <ListItemText primary="Delete Company" />
   </ListItemButton>
 </ListItem>
+
+
+<Divider sx={{ my: 2 }} />
+
+<ListItem disablePadding sx={{ mt: 2 }}>
+  <ListItemButton onClick={() => setOpenChangePassword(true)}>
+    <ListItemIcon><EditIcon /></ListItemIcon>
+    <ListItemText primary="Change Password" />
+  </ListItemButton>
+</ListItem>
+
+
+
 
           <ListItem disablePadding>
             <ListItemButton onClick={handleLogout}>
@@ -847,6 +876,11 @@ const [filtro, setFiltro] = useState('');
   onClose={() => setOpenEliminarOportunidades(false)}
   user={user}
   empresas={empresas}
+/>
+<ModalChangePassword
+  open={openChangePassword}
+  onClose={() => setOpenChangePassword(false)}
+  user={user}
 />
 
 

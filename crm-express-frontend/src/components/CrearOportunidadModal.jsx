@@ -35,10 +35,20 @@ const CrearOportunidadModal = ({ open, onClose, oportunidad, empresas = [], onCr
 
 
   const [snackbar, setSnackbar] = useState({
-  open: false,
+ 
+
   message: '',
   severity: 'success', // o 'error', 'info', etc.
 });
+const [moneda, setMoneda] = useState('EUR'); // valor por defecto
+const MONEDAS = [
+  { value: 'EUR', label: '€ - Euro' },
+  { value: 'USD', label: '$ - US dollar' },
+  { value: 'GBP', label: '£ - Pound sterling' },
+  { value: 'JPY', label: '¥ - Japanese Yen' },
+  { value: 'MXN', label: '$ - Mexican Peso' }
+];
+
 
 
 const mostrarSnackbar = (message, severity = 'success') => {
@@ -72,6 +82,8 @@ const mostrarSnackbar = (message, severity = 'success') => {
       setSeguimiento(oportunidad.seguimiento || '');
       setListado(oportunidad.listado || '');
       setValor(oportunidad.valor_oportunidad || '');
+      setMoneda(oportunidad.moneda || 'EUR');
+
     } else if (open) {
       // Modo creación
       setSelectedEmpresa(null);
@@ -99,6 +111,7 @@ const mostrarSnackbar = (message, severity = 'success') => {
   lead_empresa: leadChecked ? leadEmpresa : '',
   id_empresa_crm: selectedEmpresa.id,
   valor_oportunidad: parseFloat(valor),
+  moneda: moneda, // <-- Aquí
   created_by: user.created_by, // OJO: debe ir el correo del usuario actual
   bussiness_area: businessArea,
   zone: zone
@@ -237,6 +250,23 @@ const mostrarSnackbar = (message, severity = 'success') => {
           onChange={e => setValor(e.target.value)}
           sx={{ mb: 2 }}
         />
+
+
+        <FormControl fullWidth sx={{ mb: 2 }}>
+  <InputLabel>Currency</InputLabel>
+  <Select
+    value={moneda}
+    label="Currency"
+    onChange={e => setMoneda(e.target.value)}
+  >
+    {MONEDAS.map(opt => (
+      <MenuItem key={opt.value} value={opt.value}>
+        {opt.label}
+      </MenuItem>
+    ))}
+  </Select>
+</FormControl>
+
       </DialogContent>
 
       <DialogActions>
