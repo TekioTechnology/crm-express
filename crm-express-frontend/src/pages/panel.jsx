@@ -333,7 +333,7 @@ const [filtro, setFiltro] = useState('');
           <ListItemText primary="Total opportunities" secondary={oportunidades.length} />
         </ListItemButton>
       </ListItem>
-      
+
 <Divider sx={{ my: 2 }} />
 
 
@@ -374,6 +374,7 @@ const [filtro, setFiltro] = useState('');
 
 
 
+
       {/* SOLO EN MÓVIL */}
       {isMobile && (
         <>
@@ -399,42 +400,16 @@ const [filtro, setFiltro] = useState('');
             </ListItemButton>
           </ListItem>
 
-<ListItem disablePadding>
-  <ListItemButton>
-    <ListItemIcon>
-      <PersonRemoveIcon />
-    </ListItemIcon>
-    <ListItemText primary="Delete Contact" />
-  </ListItemButton>
-</ListItem>
 
-<ListItem disablePadding>
-  <ListItemButton>
-    <ListItemIcon>
-      <RemoveCircleOutlineIcon />
-    </ListItemIcon>
-    <ListItemText primary="Delete Opportunity" />
-  </ListItemButton>
-</ListItem>
 
-<ListItem disablePadding>
-  <ListItemButton onClick={() => setOpenEliminarEmpresa(true)}>
-    <ListItemIcon>
-      <DomainDisabledIcon />
-    </ListItemIcon>
-    <ListItemText primary="Delete Company" />
-  </ListItemButton>
-</ListItem>
+
+
+
 
 
 <Divider sx={{ my: 2 }} />
 
-<ListItem disablePadding sx={{ mt: 2 }}>
-  <ListItemButton onClick={() => setOpenChangePassword(true)}>
-    <ListItemIcon><EditIcon /></ListItemIcon>
-    <ListItemText primary="Change Password" />
-  </ListItemButton>
-</ListItem>
+
 
 
 
@@ -789,21 +764,29 @@ const [filtro, setFiltro] = useState('');
           }}
         >
           <Typography variant="h5">Companies Registered</Typography>
-          <TextField
-            variant="outlined"
-            placeholder="Search by Company, Contact or Community"
-            size="small"
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
-            sx={{ minWidth: 280 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              )
-            }}
-          />
+
+         <TextField
+  variant="outlined"
+  placeholder="Search by Company, Contact or Community"
+  size="small"
+  value={filtro}
+  onChange={(e) => setFiltro(e.target.value)}
+  fullWidth
+  sx={{
+    width: '100%',
+    maxWidth: '100%',
+    mt: 1,
+    mb: 1,
+  }}
+  InputProps={{
+    startAdornment: (
+      <InputAdornment position="start">
+        <SearchIcon />
+      </InputAdornment>
+    )
+  }}
+/>
+
         </Box>
 
         {renderEmpresas()}
